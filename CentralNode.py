@@ -1,7 +1,7 @@
 import grpc
 import mini_splunk_protobuf_pb2
 import mini_splunk_protobuf_pb2_grpc
-import sqlite3
+from cassandra.cluster import Cluster
 import os
 import sys
 import time
@@ -11,21 +11,53 @@ from concurrent import futures
 # inherits the Servicer class for interface methods, and Stub class for client requests
 class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
     def __init__(self, worker_addresses):
-        self.node_id = 0
-        self.nodes = {}
+        self.worker_nodes = {}
  
         for address in worker_addresses:
             # create channels to every worker node
             channel = grpc.insecure_channel(address)
 
-            self.nodes[self.node_id] = {
+            self.worker_nodes[address] = {
                 "channel": channel,
                 "stub": mini_splunk_protobuf_pb2_grpc.MiniSplunkStub(channel),
-                "address": address,
             }
 
-            # each worker node has a unique integer identifier
-            self.node_id += 1
+        # main cassandra cluster, with the cassandra seed node as contact point
+        cassandra_cluster = Cluster(
+            ["cassandra_seed"],
+            port=9402
+        )
+
+        # connect to the cluster
+        session = cassandra_cluster.connect()
+
+        # create keyspace
+        session.execute(
+            """
+                CREATE KEYSPACE IF NOT EXISTS syslog_keyspace
+                WITH REPLICATION = {
+                    'class' : 'SimpleStrategy',
+                    'replication_factor' : 3
+                };
+            """
+        )
+
+        # initialize table with date and timestamp as compound partition key
+        session.execute(
+            """
+                CREATE IF NOT EXISTS syslog_keyspace.syslogs(
+                    date text,
+                    timestamp text,
+                    hostname text,
+                    daemon text,
+                    message text,
+                    PRIMARY KEY (date, timestamp)
+                );
+            """
+        )
+
+        # terminate connection
+        cassandra_cluster_nodes.shutdown()
 
     def Ingest(self, request_iterator, context):
         pass
@@ -39,7 +71,7 @@ def main():
 
     # addresses of the worker nodes
     worker_addresses = [
-        "worker_node_0:50051",
+        "worker_node_0:50051", # using the docker service name automatically resolves to the node's IP
         "worker_node_1:50051",
         "worker_node_2:50051",
         "worker_node_3:50051",

@@ -6,4 +6,4 @@ RUN pip3 install grpcio grpcio-tools
 RUN pip3 install redis[hiredis]
 RUN pip3 install cassandra-driver
 
-COPY ..
+COPY . .
