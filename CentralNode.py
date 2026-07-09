@@ -50,6 +50,7 @@ class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
                     timestamp text,
                     hostname text,
                     daemon text,
+                    severity text,
                     message text,
                     PRIMARY KEY (date, timestamp)
                 );
