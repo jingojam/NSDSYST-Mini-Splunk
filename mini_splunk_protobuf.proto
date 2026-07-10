@@ -7,15 +7,15 @@ service MiniSplunk{
 
 	rpc Purge(PurgeRequest) returns (RequestStatus);					// Service for Purging Logs. Accepts a `PurgeRequest` message to signal Server.
 
-	rpc SearchDate(QueryRequest) returns (LogResults);			// Service for filtering logs based on Date criterion. Returns `LogResults` containing 0-n `LogString` messages.
+	rpc SearchDate(QueryRequest) returns (stream LogString);			// Service for filtering logs based on Date criterion. Returns a stream of 0-n `LogString` messages.
 
-	rpc SearchHost(QueryRequest) returns (LogResults);			// Service for filtering logs based on Hostname criterion. Returns `LogResults` containing 0-n `LogString` messages.
+	rpc SearchHost(QueryRequest) returns (stream LogString);			// Service for filtering logs based on Hostname criterion. Returns a stream of 0-n `LogString` messages.
 
-	rpc SearchDaemon(QueryRequest) returns (LogResults);		// Service for filtering logs based on Process criterion. Returns `LogResults` containing 0-n `LogString` messages.
+	rpc SearchDaemon(QueryRequest) returns (stream LogString);		// Service for filtering logs based on Process criterion. Returns a stream of 0-n `LogString` messages.
 
-	rpc SearchSeverity(QueryRequest) returns (LogResults);		// Service for filtering logs based on Severity criterion. Returns `LogResults` containing 0-n `LogString` messages.
+	rpc SearchSeverity(QueryRequest) returns (stream LogString);		// Service for filtering logs based on Severity criterion. Returns a stream of 0-n `LogString` messages.
 
-	rpc SearchKeyword(QueryRequest) returns (LogResults);		// Service for filtering logs based on Keyword/s criterion. Returns `LogResults` containing 0-n `LogString` messages.
+	rpc SearchKeyword(QueryRequest) returns (stream LogString);		// Service for filtering logs based on Keyword/s criterion. Returns a stream of 0-n `LogString` messages.
 
 	rpc CountKeyword(QueryRequest) returns (LogCount);			// Service for filtering logs based on Keyword/s criterion and accumulating matches. Returns `LogCount` match amount message.
 }
@@ -25,23 +25,18 @@ service MiniSplunk{
 // String containing a standard Syslog message 
 message LogString{
 	string client = 1; // client or log sender name
-	string message = 1;
+	string message = 2;
 }
 
 // Query Request sent by the Client
 message QueryRequest{
 	string client = 1; // client or log sender name
-	string argument = 1;	// e.g., "Invalid"
+	string argument = 2;	// e.g., "Invalid"
 }
 
 message PurgeRequest{} // No arguments, since Client only needs to Signal Server to Purge
 
 // Response Formats
-
-// Array of strings (log results)
-message LogResults{
-	repeated LogString log_entries = 1;
-}
 
 // Integer corresponding to amount of matched logs
 message LogCount{

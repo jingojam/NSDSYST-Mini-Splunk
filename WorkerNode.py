@@ -71,8 +71,8 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 	"""Service for File Ingests. Accepts a stream (flow) of `LogString` messages.
     """
 	def Ingest(self, request_iterator, context):
-		def obtain_bulk():
-			for request in request_iterator: # for every request streamed by the client
+		def obtain_bulk(iterator):
+			for request in iterator: # for every request streamed by the client
 				# precheck if index exists (since indices are per-client)
 				self.CreateIndex(f"{request.client}_index")
 
@@ -90,8 +90,8 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 						"message": match.group(5)
 					}
 
-		# ingest the logs in bulk to send N+ logs in one network rt
-		helpers.bulk(self.elastic_client, obtain_bulk())
+		# ingest the logs in bulk to send N+ logs in one network message
+		helpers.bulk(self.elastic_client, obtain_bulk(request_iterator))
 
 		return mini_splunk_protobuf_pb2.RequestStatus(status=True)
 
@@ -100,8 +100,8 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 	def Purge(self, request, context):
 		pass
 
-	"""Service for filtering logs based on Date criterion. Returns `LogResults` containing 0-n `LogString` messages.
-    """
+	"""Service for filtering logs based on Date criterion. Returns a stream of 0-n `LogString` messages.
+	"""
 	def SearchDate(self, request, context):
 		res = self.elastic_client.search(
 			index="syslog_index",
@@ -113,22 +113,22 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 		)
 		
 
-	"""Service for filtering logs based on Hostname criterion. Returns `LogResults` containing 0-n `LogString` messages.
+	"""Service for filtering logs based on Hostname criterion. Returns a stream of 0-n `LogString` messages.
     """
 	def SearchHost(self, request, context):
 		pass
 
-	"""Service for filtering logs based on Process criterion. Returns `LogResults` containing 0-n `LogString` messages.
+	"""Service for filtering logs based on Process criterion. Returns a stream of 0-n `LogString` messages.
     """
 	def SearchDaemon(self, request, context):
 		pass
 
-	"""Service for filtering logs based on Severity criterion. Returns `LogResults` containing 0-n `LogString` messages.
+	"""Service for filtering logs based on Severity criterion. Returns a stream of 0-n `LogString` messages.
     """
 	def SearchSeverity(self, request, context):
 		pass
 
-	"""Service for filtering logs based on Keyword/s criterion. Returns `LogResults` containing 0-n `LogString` messages.
+	"""Service for filtering logs based on Keyword/s criterion. Returns a stream of 0-n `LogString` messages.
     """
 	def SearchKeyword(self, request, context):
 		pass

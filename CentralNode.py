@@ -5,14 +5,18 @@ from elasticsearch import ElasticSearch
 import os
 import sys
 import time
+import itertools
 from concurrent import futures
 
 # Central server node class serves as intermediary for facilitating client requests and distributing tasks to workers
 # inherits the Servicer class for interface methods, and Stub class for client requests
 class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
     def __init__(self, worker_addresses):
+        self.worker_node_count = len(worker_addresses)
         self.worker_nodes = {}
- 
+        self.worker_node_addresses = worker_addresses
+        self.current_worker_node = 0
+
         for address in worker_addresses:
             # create channels to every worker node
             channel = grpc.insecure_channel(address)
@@ -31,11 +35,60 @@ class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 			]
 		)
 
-    def Ingest(self, request_iterator, context):
-        pass
+    # updates current worker node to next node
+    def Next(self):
+        # update the last worker node to next (cycles back to 0 --the first worker node)
+        self.current_worker_node = (self.current_worker_node + 1) % self.worker_node_count
 
-    def SearchDate(self, request, context):
-        pass
+	"""Service for File Ingests. Accepts a stream (flow) of `LogString` messages.
+    """
+    def Ingest(self, request_iterator, context):
+        # function to yield request messages of (`mini_splunk_protobuf_pb2.LogString()`) from an iterator
+        def Requests(iterator):
+            for request in iterator:
+                yield request
+
+        # send the requests to the worker node for ingestion
+        res = self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].Ingest(Requests(request_iterator))
+
+        # move to the next worker node
+        self.Next()
+        return res
+
+	"""Service for Purging Logs. Accepts a `PurgeRequest` message to signal Server.
+    """
+	def Purge(self, request, context):
+		pass
+
+	"""Service for filtering logs based on Date criterion. Returns a stream of 0-n `LogString` messages.
+	"""
+	def SearchDate(self, request, context):
+        pass		
+
+	"""Service for filtering logs based on Hostname criterion. Returns a stream of 0-n `LogString` messages.
+    """
+	def SearchHost(self, request, context):
+		pass
+
+	"""Service for filtering logs based on Process criterion. Returns a stream of 0-n `LogString` messages.
+    """
+	def SearchDaemon(self, request, context):
+		pass
+
+	"""Service for filtering logs based on Severity criterion. Returns a stream of 0-n `LogString` messages.
+    """
+	def SearchSeverity(self, request, context):
+		pass
+
+	"""Service for filtering logs based on Keyword/s criterion. Returns a stream of 0-n `LogString` messages.
+    """
+	def SearchKeyword(self, request, context):
+		pass
+
+	"""Service for filtering logs based on Keyword/s criterion and accumulating matches. Returns `LogCount` match amount message.
+    """
+	def CountKeyword(self, request, context):
+		pass
 
 def main():
     address = "0.0.0.0:50050"

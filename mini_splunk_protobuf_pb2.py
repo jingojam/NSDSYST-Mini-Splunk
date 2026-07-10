@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1amini_splunk_protobuf.proto\"\x1c\n\tLogString\x12\x0f\n\x07message\x18\x01 \x01(\t\" \n\x0cQueryRequest\x12\x10\n\x08\x61rgument\x18\x01 \x01(\t\"\x0e\n\x0cPurgeRequest\"-\n\nLogResults\x12\x1f\n\x0blog_entries\x18\x01 \x03(\x0b\x32\n.LogString\"\x19\n\x08LogCount\x12\r\n\x05\x63ount\x18\x01 \x01(\x03\"\x18\n\x06Status\x12\x0e\n\x06status\x18\x01 \x01(\x08\x32\xd3\x02\n\nMiniSplunk\x12\x1f\n\x06Ingest\x12\n.LogString\x1a\x07.Status(\x01\x12\x1f\n\x05Purge\x12\r.PurgeRequest\x1a\x07.Status\x12(\n\nSearchDate\x12\r.QueryRequest\x1a\x0b.LogResults\x12(\n\nSearchHost\x12\r.QueryRequest\x1a\x0b.LogResults\x12*\n\x0cSearchDaemon\x12\r.QueryRequest\x1a\x0b.LogResults\x12,\n\x0eSearchSeverity\x12\r.QueryRequest\x1a\x0b.LogResults\x12+\n\rSearchKeyword\x12\r.QueryRequest\x1a\x0b.LogResults\x12(\n\x0c\x43ountKeyword\x12\r.QueryRequest\x1a\t.LogCountb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1amini_splunk_protobuf.proto\",\n\tLogString\x12\x0e\n\x06\x63lient\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"0\n\x0cQueryRequest\x12\x0e\n\x06\x63lient\x18\x01 \x01(\t\x12\x10\n\x08\x61rgument\x18\x02 \x01(\t\"\x0e\n\x0cPurgeRequest\"\x19\n\x08LogCount\x12\r\n\x05\x63ount\x18\x01 \x01(\x03\"\x1f\n\rRequestStatus\x12\x0e\n\x06status\x18\x01 \x01(\x08\x32\xe6\x02\n\nMiniSplunk\x12&\n\x06Ingest\x12\n.LogString\x1a\x0e.RequestStatus(\x01\x12&\n\x05Purge\x12\r.PurgeRequest\x1a\x0e.RequestStatus\x12)\n\nSearchDate\x12\r.QueryRequest\x1a\n.LogString0\x01\x12)\n\nSearchHost\x12\r.QueryRequest\x1a\n.LogString0\x01\x12+\n\x0cSearchDaemon\x12\r.QueryRequest\x1a\n.LogString0\x01\x12-\n\x0eSearchSeverity\x12\r.QueryRequest\x1a\n.LogString0\x01\x12,\n\rSearchKeyword\x12\r.QueryRequest\x1a\n.LogString0\x01\x12(\n\x0c\x43ountKeyword\x12\r.QueryRequest\x1a\t.LogCountb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,17 +32,15 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'mini_splunk_protobuf_pb2', 
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_LOGSTRING']._serialized_start=30
-  _globals['_LOGSTRING']._serialized_end=58
-  _globals['_QUERYREQUEST']._serialized_start=60
-  _globals['_QUERYREQUEST']._serialized_end=92
-  _globals['_PURGEREQUEST']._serialized_start=94
-  _globals['_PURGEREQUEST']._serialized_end=108
-  _globals['_LOGRESULTS']._serialized_start=110
-  _globals['_LOGRESULTS']._serialized_end=155
-  _globals['_LOGCOUNT']._serialized_start=157
-  _globals['_LOGCOUNT']._serialized_end=182
-  _globals['_STATUS']._serialized_start=184
-  _globals['_STATUS']._serialized_end=208
-  _globals['_MINISPLUNK']._serialized_start=211
-  _globals['_MINISPLUNK']._serialized_end=550
+  _globals['_LOGSTRING']._serialized_end=74
+  _globals['_QUERYREQUEST']._serialized_start=76
+  _globals['_QUERYREQUEST']._serialized_end=124
+  _globals['_PURGEREQUEST']._serialized_start=126
+  _globals['_PURGEREQUEST']._serialized_end=140
+  _globals['_LOGCOUNT']._serialized_start=142
+  _globals['_LOGCOUNT']._serialized_end=167
+  _globals['_REQUESTSTATUS']._serialized_start=169
+  _globals['_REQUESTSTATUS']._serialized_end=200
+  _globals['_MINISPLUNK']._serialized_start=203
+  _globals['_MINISPLUNK']._serialized_end=561
 # @@protoc_insertion_point(module_scope)
