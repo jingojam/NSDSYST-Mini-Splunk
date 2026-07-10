@@ -10,24 +10,69 @@ import time
 import re
 from concurrent import futures
 
+# severity levels
+severity_level = [
+	"EMERGENCY",    # index 0: emergency (level 0)
+	"ALERT",
+	"CRITICAL",
+	"ERROR",
+	"WARNING",
+	"NOTICE",
+	"INFORMATIONAL",
+	"DEBUG"
+]
+
+# severity level mappings to strings
+inferred_severity = {
+	# emergency
+	"panic": 0, "emerg": 0, 
+
+	# alert
+	"alert": 1, "immediate": 1,
+
+	# critical
+	"crit": 2, "critical": 2, "fatal": 2,
+    
+	# error
+	"error": 3, "fail": 3, "failed": 3, "failure": 3, "err": 3,
+    
+	# warning
+	"warning": 4, "warn": 4, "invalid": 4, "denied": 4, "refused": 4, 
+	"unknown": 4, "timeout": 4, 
+    
+    # notice
+	"notice": 5, "significant": 5, 
+    
+	# informational
+	"info": 6, "accepted": 6, "opened": 6, "closed": 6, 
+
+	# debug
+	"debug": 7, "verbose": 7
+}
+
+keys = list(inferred_severity.keys())
+
 """
 	regex pattern for syslog (RFC 3164 BSD Syslog format)
 		* all groups (index [0]):
-			-> entire matched string
+			-> entire matched string 
 
-		* group 1 (index [1]) MONTH DAY:
+		* group 1 (index [1]) priority (optional):
+			-> (\<\d+\>\s+)? -> matches 1+ numbers enclosed by < > angle brackets, 1+ space (optional in case logs do not have priority level)
+
+		* group 2 (index [2]) MONTH DAY:
 			-> ^([a-zA-Z]{3}\s+\d{1,2}) -> matches 3 alphabetical characters (month), 1+ space, 2 digits (day)
 		
-		* group 2 (index [2]) Timestamp:
+		* group 3 (index [3]) Timestamp:
 			-> (\d{2}:\d{2}:\d{2}) -> matches 2 digits (hour) : 2 digits (minute) : 2 digits (second)
 		
-		* group 3 (index [3]) Hostname:
+		* group 4 (index [4]) Hostname:
 			-> ([\w\-._]+) -> matches 1+ alphanumeric characters, including dash (-), dot (.), and underscore (_)
 
-		* group 4 (index [4]) Daemon (and optional PID):
+		* group 5 (index [5]) Daemon (and optional PID):
 			-> ([\w-]+(?:\[\d+\])?) -> matches 1+ alphanumeric characters, and optional 1+ integer PID enclosed by [ ]
 
-		* group 5 (index [5]) Message:
+		* group 6 (index [6]) Message:
 			-> (.*)$ -> matches wildcard for multiple characters
 """
 syslog_pattern = re.compile(
@@ -68,6 +113,16 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 				}
 			)
 
+	def InferSeverity(self, message):
+		severity = 7
+		
+		for key in keys:
+			if key in message:
+				if inferred_severity[key] < severity:
+					severity = inferred_severity[key] 
+		
+		return severity_level[severity]
+
 	"""Service for File Ingests. Accepts a stream (flow) of `LogString` messages.
     """
 	def Ingest(self, request_iterator, context):
@@ -81,13 +136,16 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 
 				#then for every match group (see global `syslog_pattern`) return/yield that for the helpers bulk method
 				for match in matches:
+					message = match.group(5)
+
 					yield{
 						"_index": request.client + "_index",
 						"date": match.group(1),
 						"timestamp": match.group(2),
 						"hostname": match.group(3),
 						"daemon": match.group(4),
-						"message": match.group(5)
+						"severity": self.InferSeverity(message)
+						"message": message
 					}
 
 		# ingest the logs in bulk to send N+ logs in one network message
@@ -104,13 +162,49 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 	"""
 	def SearchDate(self, request, context):
 		res = self.elastic_client.search(
-			index="syslog_index",
+			index="*_index",
+			size=100,
 			query={
 				"match": {
 					"date": request.argument
 				}
-			}
+			},
+			sort=[
+				{"date": {"order": "asc"}},
+				{"timestamp": {"order": "asc"}}
+			]
 		)
+
+		while True:
+			hits = res["hits"]["hits"]
+
+			if not hits:
+				break
+			
+			for hit in hits:
+				log_fields = hit["_source"]
+				log_string = f"{log_fields['date']} {log_fields['timestamp']} {log_fields['hostname']} {log_fields['process']}: {log_fields['message']}"
+				yield mini_splunk_protobuf_pb2.LogString(
+					client=request.client,
+					message=log_string
+				)
+
+			res = self.elastic_client.search(
+				index="*_index",
+				size=100,
+				query={
+					"match": {
+						"date": request.argument
+					}
+				},
+
+				search_after=hits[-1]["sort"],
+
+				sort=[
+					{"date": {"order": "asc"}},
+					{"timestamp": {"order": "asc"}}
+				]
+			)
 		
 
 	"""Service for filtering logs based on Hostname criterion. Returns a stream of 0-n `LogString` messages.
