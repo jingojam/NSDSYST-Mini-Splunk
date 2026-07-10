@@ -28,7 +28,7 @@ services:
   # elasticsearch multi-node cluster from https://www.elastic.co/guide/en/elasticsearch/reference/7.5/docker.html 
   # container for elastic search cluster node 0 
   elastic_node_0:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
     container_name: elastic_node_0
     environment:
       - node.name=elastic_node_0
@@ -50,7 +50,7 @@ services:
 
   # container for elastic search cluster node 1 
   elastic_node_1:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
     container_name: elastic_node_1
     environment:
       - node.name=elastic_node_1
@@ -70,7 +70,7 @@ services:
 
   # container for elastic search cluster node 2
   elastic_node_2:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
     container_name: elastic_node_2
     environment:
       - node.name=elastic_node_2

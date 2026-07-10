@@ -24,11 +24,13 @@ service MiniSplunk{
 
 // String containing a standard Syslog message 
 message LogString{
+	string client = 1; // client or log sender name
 	string message = 1;
 }
 
 // Query Request sent by the Client
 message QueryRequest{
+	string client = 1; // client or log sender name
 	string argument = 1;	// e.g., "Invalid"
 }
 

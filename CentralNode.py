@@ -21,6 +21,15 @@ class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
                 "channel": channel,
                 "stub": mini_splunk_protobuf_pb2_grpc.MiniSplunkStub(channel),
             }
+        
+        #connect via the elastic search cluster nodes
+		self.elastic_client = Elasticsearch(
+			hosts=[
+				"http://elastic_node_0:9200",
+				"http://elastic_node_1:9200",
+				"http://elastic_node_2:9200",
+			]
+		)
 
     def Ingest(self, request_iterator, context):
         pass
