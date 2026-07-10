@@ -1,7 +1,7 @@
 import grpc
 import mini_splunk_protobuf_pb2
 import mini_splunk_protobuf_pb2_grpc
-from cassandra.cluster import Cluster
+from elasticsearch import ElasticSearch
 
 import os
 import sys
@@ -40,14 +40,10 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 	"""class Default constructor
 	"""
 	def __init__(self):
-		# main cassandra cluster, with the cassandra seed node as contact point
-		self.cassandra_cluster = Cluster(
-			["cassandra_seed"],
-			port=9402
+		self.elastic_client = ElasticSearch(
+			hosts=[""]
 		)
-
-		# connect to the cluster
-		self.cassandra_session = cassandra_cluster.connect()
+		pass
 
     """Service for File Ingests. Accepts a stream (flow) of `LogString` messages.
     """
@@ -62,110 +58,22 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
     """Service for filtering logs based on Date criterion. Returns `LogResults` containing 0-n `LogString` messages.
     """
 	def SearchDate(self, request, context):
-		# create a prepared statement for querying cassandra db with (date) column as criterion based on input
-		prepared_statement = self.session.prepare(
-			"SELECT * FROM syslog_keyspace.syslogs WHERE date = ?"
-		)
-		
-		# automatically bind the request argument with the prepared statement and then execute the db query
-		rows = self.session.execute(prepared_statement, [request.argument])
-
-		entries = []
-
-		# for every row (syslog line) in the returned rows, create a `LogString` from protobuf with the row line as message
-		#  since protobuf specifies this service returns `LogResults` which contains repeated `LogString` instances
-		for row in rows:
-			entries.append(
-				mini_splunk_protobuf_pb2.LogString(
-					message=row
-				)
-			)
-
-		# return a `LogResults` response with the entries as argument
-		return mini_splunk_protobuf_pb2.LogResults(
-			log_entries=entries
-		)
+		pass
 
     """Service for filtering logs based on Hostname criterion. Returns `LogResults` containing 0-n `LogString` messages.
     """
    	def SearchHost(self, request, context):
-		# create a prepared statement for querying cassandra db with (hostname) column as criterion based on input
-		prepared_statement = self.session.prepare(
-			"SELECT * FROM syslog_keyspace.syslogs WHERE hostname = ?"
-		)
-		
-		# automatically bind the request argument with the prepared statement and then execute the db query
-		rows = self.session.execute(prepared_statement, [request.argument])
-
-		entries = []
-
-		# for every row (syslog line) in the returned rows, create a `LogString` from protobuf with the row line as message
-		#  since protobuf specifies this service returns `LogResults` which contains repeated `LogString` instances
-		for row in rows:
-			entries.append(
-				mini_splunk_protobuf_pb2.LogString(
-					message=row
-				)
-			)
-
-		# return a `LogResults` response with the entries as argument
-		return mini_splunk_protobuf_pb2.LogResults(
-			log_entries=entries
-		)
+		pass
 
     """Service for filtering logs based on Process criterion. Returns `LogResults` containing 0-n `LogString` messages.
     """
     def SearchDaemon(self, request, context):
-		# create a prepared statement for querying cassandra db with (daemon) column as criterion based on input
-		prepared_statement = self.session.prepare(
-			"SELECT * FROM syslog_keyspace.syslogs WHERE daemon = ?"
-		)
-		
-		# automatically bind the request argument with the prepared statement and then execute the db query
-		rows = self.session.execute(prepared_statement, [request.argument])
-
-		entries = []
-
-		# for every row (syslog line) in the returned rows, create a `LogString` from protobuf with the row line as message
-		#  since protobuf specifies this service returns `LogResults` which contains repeated `LogString` instances
-		for row in rows:
-			entries.append(
-				mini_splunk_protobuf_pb2.LogString(
-					message=row
-				)
-			)
-
-		# return a `LogResults` response with the entries as argument
-		return mini_splunk_protobuf_pb2.LogResults(
-			log_entries=entries
-		)
+		pass
 
     """Service for filtering logs based on Severity criterion. Returns `LogResults` containing 0-n `LogString` messages.
     """
     def SearchSeverity(self, request, context):
-		# create a prepared statement for querying cassandra db with (severity) column as criterion based on input
-		prepared_statement = self.session.prepare(
-			"SELECT * FROM syslog_keyspace.syslogs WHERE severity = ?"
-		)
-		
-		# automatically bind the request argument with the prepared statement and then execute the db query
-		rows = self.session.execute(prepared_statement, [request.argument])
-
-		entries = []
-
-		# for every row (syslog line) in the returned rows, create a `LogString` from protobuf with the row line as message
-		#  since protobuf specifies this service returns `LogResults` which contains repeated `LogString` instances
-		for row in rows:
-			entries.append(
-				mini_splunk_protobuf_pb2.LogString(
-					message=row
-				)
-			)
-
-		# return a `LogResults` response with the entries as argument
-		return mini_splunk_protobuf_pb2.LogResults(
-			log_entries=entries
-		)
+		pass
 
     """Service for filtering logs based on Keyword/s criterion. Returns `LogResults` containing 0-n `LogString` messages.
     """

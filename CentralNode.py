@@ -1,7 +1,7 @@
 import grpc
 import mini_splunk_protobuf_pb2
 import mini_splunk_protobuf_pb2_grpc
-from cassandra.cluster import Cluster
+from elasticsearch import ElasticSearch
 import os
 import sys
 import time
@@ -22,49 +22,11 @@ class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
                 "stub": mini_splunk_protobuf_pb2_grpc.MiniSplunkStub(channel),
             }
 
-        # main cassandra cluster, with the cassandra seed node as contact point
-        cassandra_cluster = Cluster(
-            ["cassandra_seed"],
-            port=9402
-        )
-
-        # connect to the cluster
-        session = cassandra_cluster.connect()
-
-        # create keyspace
-        session.execute(
-            """
-                CREATE KEYSPACE IF NOT EXISTS syslog_keyspace
-                WITH REPLICATION = {
-                    'class' : 'SimpleStrategy',
-                    'replication_factor' : 3
-                };
-            """
-        )
-
-        # initialize table with date and timestamp as compound partition key
-        session.execute(
-            """
-                CREATE IF NOT EXISTS syslog_keyspace.syslogs(
-                    date text,
-                    timestamp text,
-                    hostname text,
-                    daemon text,
-                    severity text,
-                    message text,
-                    PRIMARY KEY (date, timestamp)
-                );
-            """
-        )
-
-        # terminate connection
-        cassandra_cluster_nodes.shutdown()
-
     def Ingest(self, request_iterator, context):
         pass
 
     def SearchDate(self, request, context):
-        return self.nodes[0]["stub"].SearchDate(request)
+        pass
 
 def main():
     address = "0.0.0.0:50050"

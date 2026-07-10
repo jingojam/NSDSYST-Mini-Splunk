@@ -1,10 +1,22 @@
+# docker networks
 networks:
-  splunk_net:
+  splunk_net: # network for central gateway node, redis distributed lock, and worker nodes
     driver: bridge
-  cassandra_net:
+  elastic_net: # network for elastic search cluster
     driver: bridge
 
+# volumes (storage files) for elastic cluster nodes
+volumes:
+  elastic_node_0_data:
+    driver: local
+  elastic_node_1_data:
+    driver: local
+  elastic_node_2_data:
+    driver: local
+
+# docker service containers
 services:
+  # container for redis distributed lock
   redis:
     image: redis:latest
     container_name: redis
@@ -13,62 +25,72 @@ services:
     networks:
       - splunk_net
 
-  cassandra_seed:
-    image: cassandra:latest
-    container_name: cassandra_seed
+  # elasticsearch multi-node cluster from https://www.elastic.co/guide/en/elasticsearch/reference/7.5/docker.html 
+  # container for elastic search cluster node 0 
+  elastic_node_0:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    container_name: elastic_node_0
+    environment:
+      - node.name=elastic_node_0
+      - cluster.name=elastic_search_cluster
+      - discovery.seed_hosts=elastic_node_1,elastic_node_2
+      - cluster.initial_master_nodes=elastic_node_0,elastic_node_1,elastic_node_2
+      - bootstrap.memory_lock=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elastic_node_0_data:/usr/share/elasticsearch/data
     ports:
-      - 9042:9042
-    environment:
-      - CASSANDRA_CLUSTER_NAME=CASSANDRA-CLUSTER
-      - CASSANDRA_RACK=CASSANDRA-RACK
-      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
-      - CASSANDRA_DC=CASSANDRA-DATACENTER
+      - 9200:9200
     networks:
-      - cassandra_net
+      - elastic_net
 
-  cassandra_node_0:
-    image: cassandra:latest
-    container_name: cassandra_node_0
+  # container for elastic search cluster node 1 
+  elastic_node_1:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    container_name: elastic_node_1
     environment:
-      - CASSANDRA_CLUSTER_NAME=CASSANDRA-CLUSTER
-      - CASSANDRA_SEEDS=cassandra_seed
-      - CASSANDRA_RACK=CASSANDRA-RACK
-      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
-      - CASSANDRA_DC=CASSANDRA-DATACENTER
+      - node.name=elastic_node_1
+      - cluster.name=elastic_search_cluster
+      - discovery.seed_hosts=elastic_node_0,elastic_node_2
+      - cluster.initial_master_nodes=elastic_node_0,elastic_node_1,elastic_node_2
+      - bootstrap.memory_lock=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elastic_node_1_data:/usr/share/elasticsearch/data
     networks:
-      - cassandra_net
-    depends_on:
-      - cassandra_seed
+      - elastic_net
 
-  cassandra_node_1:
-    image: cassandra:latest
-    container_name: cassandra_node_1
+  # container for elastic search cluster node 2
+  elastic_node_2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    container_name: elastic_node_2
     environment:
-      - CASSANDRA_CLUSTER_NAME=CASSANDRA-CLUSTER
-      - CASSANDRA_SEEDS=cassandra_seed
-      - CASSANDRA_RACK=CASSANDRA-RACK
-      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
-      - CASSANDRA_DC=CASSANDRA-DATACENTER
+      - node.name=elastic_node_2
+      - cluster.name=elastic_search_cluster
+      - discovery.seed_hosts=elastic_node_0,elastic_node_1
+      - cluster.initial_master_nodes=elastic_node_0,elastic_node_1,elastic_node_2
+      - bootstrap.memory_lock=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elastic_node_2_data:/usr/share/elasticsearch/data
     networks:
-      - cassandra_net
-    depends_on:
-      - cassandra_seed
-
-  cassandra_node_2:
-    image: cassandra:latest
-    container_name: cassandra_node_2
-    environment:
-      - CASSANDRA_CLUSTER_NAME=CASSANDRA-CLUSTER
-      - CASSANDRA_SEEDS=cassandra_seed
-      - CASSANDRA_RACK=CASSANDRA-RACK
-      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
-      - CASSANDRA_DC=CASSANDRA-DATACENTER
-    networks:
-      - cassandra_net
-    depends_on:
-      - cassandra_seed
+      - elastic_net
   
+  # central gateway server (client contact point, and worker node coordinator)
   central_gateway:
+    # build for python script
     build: .
     container_name: central_gateway
     command: python3 CentralNode.py
@@ -78,11 +100,11 @@ services:
       - splunk_net
     depends_on:
       - redis
-      - cassandra_seed
-      - cassandra_node_0
-      - cassandra_node_1
-      - cassandra_node_2
+      - elastic_node_0
+      - elastic_node_1
+      - elastic_node_2
 
+  # worker node containers (total of 5, starting from 0-4)
   worker_node_0:
     build: .
     container_name: worker_node_0
@@ -91,14 +113,13 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - splunk_net
-      - cassandra_net
+      - elastic_net
     depends_on:
       - redis
       - central_gateway
-      - cassandra_seed
-      - cassandra_node_0
-      - cassandra_node_1
-      - cassandra_node_2
+      - elastic_node_0
+      - elastic_node_1
+      - elastic_node_2
 
   worker_node_1:
     build: .
@@ -108,14 +129,13 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - splunk_net
-      - cassandra_net
+      - elastic_net
     depends_on:
       - redis
       - central_gateway
-      - cassandra_seed
-      - cassandra_node_0
-      - cassandra_node_1
-      - cassandra_node_2
+      - elastic_node_0
+      - elastic_node_1
+      - elastic_node_2
 
   worker_node_2:
     build: .
@@ -125,14 +145,13 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - splunk_net
-      - cassandra_net
+      - elastic_net
     depends_on:
       - redis
       - central_gateway
-      - cassandra_seed
-      - cassandra_node_0
-      - cassandra_node_1
-      - cassandra_node_2
+      - elastic_node_0
+      - elastic_node_1
+      - elastic_node_2
 
   worker_node_3:
     build: .
@@ -142,14 +161,13 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - splunk_net
-      - cassandra_net
+      - elastic_net
     depends_on:
       - redis
       - central_gateway
-      - cassandra_seed
-      - cassandra_node_0
-      - cassandra_node_1
-      - cassandra_node_2
+      - elastic_node_0
+      - elastic_node_1
+      - elastic_node_2
 
   worker_node_4:
     build: .
@@ -159,11 +177,10 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - splunk_net
-      - cassandra_net
+      - elastic_net
     depends_on:
       - redis
       - central_gateway
-      - cassandra_seed
-      - cassandra_node_0
-      - cassandra_node_1
-      - cassandra_node_2
+      - elastic_node_0
+      - elastic_node_1
+      - elastic_node_2
