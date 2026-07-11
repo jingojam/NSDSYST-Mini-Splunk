@@ -184,3 +184,19 @@ services:
       - elastic_node_0
       - elastic_node_1
       - elastic_node_2
+  
+  # or define how many client nodes we want
+  #client_0:
+  # build: .
+  # container_name: client
+  # command: python3 Client.py
+  # environment:
+  #   - CLIENT_NAME=client_0
+  #   - PYTHONUNBUFFERED=1
+  # networks:
+  #   - splunk_net
+  # depends_on:
+  #   - central_gateway
+  #
+  # client_1:
+  # ...
