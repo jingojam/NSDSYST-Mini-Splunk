@@ -56,23 +56,20 @@ keys = list(inferred_severity.keys())
     regex pattern for syslog (RFC 3164 BSD Syslog format)
         * all groups (index [0]):
             -> entire matched string 
-
-        * group 1 (index [1]) priority (optional):
-            -> (\<\d+\>\s+)? -> matches 1+ numbers enclosed by < > angle brackets, 1+ space (optional in case logs do not have priority level)
-
-        * group 2 (index [2]) MONTH DAY:
+            
+        * group 1 (index [1]) MONTH DAY:
             -> ^([a-zA-Z]{3}\s+\d{1,2}) -> matches 3 alphabetical characters (month), 1+ space, 2 digits (day)
         
-        * group 3 (index [3]) Timestamp:
+        * group 2 (index [2]) Timestamp:
             -> (\d{2}:\d{2}:\d{2}) -> matches 2 digits (hour) : 2 digits (minute) : 2 digits (second)
         
-        * group 4 (index [4]) Hostname:
+        * group 3 (index [3]) Hostname:
             -> ([\w\-._]+) -> matches 1+ alphanumeric characters, including dash (-), dot (.), and underscore (_)
 
-        * group 5 (index [5]) Daemon (and optional PID):
+        * group 4 (index [4]) Daemon (and optional PID):
             -> ([\w-]+(?:\[\d+\])?) -> matches 1+ alphanumeric characters, and optional 1+ integer PID enclosed by [ ]
 
-        * group 6 (index [6]) Message:
+        * group 5 (index [5]) Message:
             -> (.*)$ -> matches wildcard for multiple characters
 """
 syslog_pattern = re.compile(
