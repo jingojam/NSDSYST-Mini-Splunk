@@ -95,6 +95,7 @@ services:
     container_name: central_gateway
     command: python3 CentralNode.py
     environment:
+      - NODE_NAME=CENTRAL_GATEWAY
       - PYTHONUNBUFFERED=1
     networks:
       - splunk_net
@@ -110,6 +111,7 @@ services:
     container_name: worker_node_0
     command: python3 WorkerNode.py
     environment:
+      - NODE_NAME=WORKER_NODE_0
       - PYTHONUNBUFFERED=1
     networks:
       - splunk_net
@@ -126,6 +128,7 @@ services:
     container_name: worker_node_1
     command: python3 WorkerNode.py
     environment:
+      - NODE_NAME=WORKER_NODE_1
       - PYTHONUNBUFFERED=1
     networks:
       - splunk_net
@@ -142,6 +145,7 @@ services:
     container_name: worker_node_2
     command: python3 WorkerNode.py
     environment:
+      - NODE_NAME=WORKER_NODE_2
       - PYTHONUNBUFFERED=1
     networks:
       - splunk_net
@@ -158,6 +162,7 @@ services:
     container_name: worker_node_3
     command: python3 WorkerNode.py
     environment:
+      - NODE_NAME=WORKER_NODE_3
       - PYTHONUNBUFFERED=1
     networks:
       - splunk_net
@@ -174,6 +179,7 @@ services:
     container_name: worker_node_4
     command: python3 WorkerNode.py
     environment:
+      - NODE_NAME=WORKER_NODE_4
       - PYTHONUNBUFFERED=1
     networks:
       - splunk_net
@@ -186,17 +192,14 @@ services:
       - elastic_node_2
   
   # or define how many client nodes we want
-  #client_0:
-  # build: .
-  # container_name: client
-  # command: python3 Client.py
-  # environment:
-  #   - CLIENT_NAME=client_0
-  #   - PYTHONUNBUFFERED=1
-  # networks:
-  #   - splunk_net
-  # depends_on:
-  #   - central_gateway
-  #
-  # client_1:
-  # ...
+  client_0:
+    build: .
+    container_name: client_0
+    command: python3 Client.py
+    environment:
+      - NODE_NAME=CLIENT_0
+      - PYTHONUNBUFFERED=1
+    networks:
+      - splunk_net
+    depends_on:
+      - central_gateway

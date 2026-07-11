@@ -86,6 +86,8 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 	"""class Default constructor
 	"""
 	def __init__(self):
+		self.node_name = os.getenv("NODE_NAME")
+		
 		# connect to elasticsearch cluster
 		self.elastic_client = Elasticsearch(
 			hosts=[
@@ -289,6 +291,12 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
     """
 	def CountKeyword(self, request, context):
 		pass
+
+	def SendPing(self, request, context):
+        return mini_splunk_protobuf_pb2.Pong(
+            receiver=self.node_name,
+            sender=request.sender
+        )
 
 def main():
 	# wildcard address automatically resolved by the container instance

@@ -75,6 +75,11 @@ class MiniSplunkStub:
                 request_serializer=mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
                 response_deserializer=mini__splunk__protobuf__pb2.LogCount.FromString,
                 _registered_method=True)
+        self.SendPing = channel.unary_unary(
+                '/MiniSplunk/SendPing',
+                request_serializer=mini__splunk__protobuf__pb2.Ping.SerializeToString,
+                response_deserializer=mini__splunk__protobuf__pb2.Pong.FromString,
+                _registered_method=True)
 
 
 class MiniSplunkServicer:
@@ -137,6 +142,12 @@ class MiniSplunkServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SendPing(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_MiniSplunkServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -179,6 +190,11 @@ def add_MiniSplunkServicer_to_server(servicer, server):
                     servicer.CountKeyword,
                     request_deserializer=mini__splunk__protobuf__pb2.QueryRequest.FromString,
                     response_serializer=mini__splunk__protobuf__pb2.LogCount.SerializeToString,
+            ),
+            'SendPing': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendPing,
+                    request_deserializer=mini__splunk__protobuf__pb2.Ping.FromString,
+                    response_serializer=mini__splunk__protobuf__pb2.Pong.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -398,6 +414,33 @@ class MiniSplunk:
             '/MiniSplunk/CountKeyword',
             mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
             mini__splunk__protobuf__pb2.LogCount.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SendPing(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/MiniSplunk/SendPing',
+            mini__splunk__protobuf__pb2.Ping.SerializeToString,
+            mini__splunk__protobuf__pb2.Pong.FromString,
             options,
             channel_credentials,
             insecure,

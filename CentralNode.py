@@ -12,6 +12,7 @@ from concurrent import futures
 # inherits the Servicer class for interface methods, and Stub class for client requests
 class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
     def __init__(self, worker_addresses):
+        self.node_name = os.getenv("NODE_NAME")
         self.worker_node_count = len(worker_addresses)
         self.worker_nodes = {}
         self.worker_node_addresses = worker_addresses
@@ -25,6 +26,13 @@ class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
                 "channel": channel,
                 "stub": mini_splunk_protobuf_pb2_grpc.MiniSplunkStub(channel),
             }
+
+            pong = self.worker_nodes[address]["stub"].SendPing(sender="CENTRAL_GATEWAY")
+
+            if pong.receiver and pong.sender.sender == "CENTRAL_GATEWAY":
+                print(f"[STATUS] Worker Node Active on {address}")
+            else:
+                print(f"[STATUS] Unable to Reach Worker Node on {address}")
         
         #connect via the elastic search cluster nodes
 		self.elastic_client = Elasticsearch(
@@ -89,6 +97,12 @@ class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
     """
 	def CountKeyword(self, request, context):
 		pass
+
+    def SendPing(self, request, context):
+        return mini_splunk_protobuf_pb2.Pong(
+            receiver=self.node_name,
+            sender=request.sender
+        )
 
 def main():
     address = "0.0.0.0:50050"

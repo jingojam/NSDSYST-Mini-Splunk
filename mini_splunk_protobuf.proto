@@ -18,6 +18,8 @@ service MiniSplunk{
 	rpc SearchKeyword(QueryRequest) returns (stream LogString);		// Service for filtering logs based on Keyword/s criterion. Returns a stream of 0-n `LogString` messages.
 
 	rpc CountKeyword(QueryRequest) returns (LogCount);			// Service for filtering logs based on Keyword/s criterion and accumulating matches. Returns `LogCount` match amount message.
+
+	rpc SendPing(Ping) returns (Pong);
 }
 
 // Request Formats
@@ -46,4 +48,14 @@ message LogCount{
 // Status signifying Success (boolean True) or Fail (boolean False)
 message RequestStatus{
 	bool status = 1;
+}
+
+// Diagnostics
+message Ping{
+	string sender = 1;
+}
+
+message Pong{
+	string receiver = 1;
+	Ping sender = 2;
 }

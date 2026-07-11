@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1amini_splunk_protobuf.proto\",\n\tLogString\x12\x0e\n\x06\x63lient\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"0\n\x0cQueryRequest\x12\x0e\n\x06\x63lient\x18\x01 \x01(\t\x12\x10\n\x08\x61rgument\x18\x02 \x01(\t\"\x0e\n\x0cPurgeRequest\"\x19\n\x08LogCount\x12\r\n\x05\x63ount\x18\x01 \x01(\x03\"\x1f\n\rRequestStatus\x12\x0e\n\x06status\x18\x01 \x01(\x08\x32\xe6\x02\n\nMiniSplunk\x12&\n\x06Ingest\x12\n.LogString\x1a\x0e.RequestStatus(\x01\x12&\n\x05Purge\x12\r.PurgeRequest\x1a\x0e.RequestStatus\x12)\n\nSearchDate\x12\r.QueryRequest\x1a\n.LogString0\x01\x12)\n\nSearchHost\x12\r.QueryRequest\x1a\n.LogString0\x01\x12+\n\x0cSearchDaemon\x12\r.QueryRequest\x1a\n.LogString0\x01\x12-\n\x0eSearchSeverity\x12\r.QueryRequest\x1a\n.LogString0\x01\x12,\n\rSearchKeyword\x12\r.QueryRequest\x1a\n.LogString0\x01\x12(\n\x0c\x43ountKeyword\x12\r.QueryRequest\x1a\t.LogCountb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1amini_splunk_protobuf.proto\",\n\tLogString\x12\x0e\n\x06\x63lient\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"0\n\x0cQueryRequest\x12\x0e\n\x06\x63lient\x18\x01 \x01(\t\x12\x10\n\x08\x61rgument\x18\x02 \x01(\t\"\x0e\n\x0cPurgeRequest\"\x19\n\x08LogCount\x12\r\n\x05\x63ount\x18\x01 \x01(\x03\"\x1f\n\rRequestStatus\x12\x0e\n\x06status\x18\x01 \x01(\x08\"\x16\n\x04Ping\x12\x0e\n\x06sender\x18\x01 \x01(\t\"/\n\x04Pong\x12\x10\n\x08receiver\x18\x01 \x01(\t\x12\x15\n\x06sender\x18\x02 \x01(\x0b\x32\x05.Ping2\x80\x03\n\nMiniSplunk\x12&\n\x06Ingest\x12\n.LogString\x1a\x0e.RequestStatus(\x01\x12&\n\x05Purge\x12\r.PurgeRequest\x1a\x0e.RequestStatus\x12)\n\nSearchDate\x12\r.QueryRequest\x1a\n.LogString0\x01\x12)\n\nSearchHost\x12\r.QueryRequest\x1a\n.LogString0\x01\x12+\n\x0cSearchDaemon\x12\r.QueryRequest\x1a\n.LogString0\x01\x12-\n\x0eSearchSeverity\x12\r.QueryRequest\x1a\n.LogString0\x01\x12,\n\rSearchKeyword\x12\r.QueryRequest\x1a\n.LogString0\x01\x12(\n\x0c\x43ountKeyword\x12\r.QueryRequest\x1a\t.LogCount\x12\x18\n\x08SendPing\x12\x05.Ping\x1a\x05.Pongb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -41,6 +41,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_LOGCOUNT']._serialized_end=167
   _globals['_REQUESTSTATUS']._serialized_start=169
   _globals['_REQUESTSTATUS']._serialized_end=200
-  _globals['_MINISPLUNK']._serialized_start=203
-  _globals['_MINISPLUNK']._serialized_end=561
+  _globals['_PING']._serialized_start=202
+  _globals['_PING']._serialized_end=224
+  _globals['_PONG']._serialized_start=226
+  _globals['_PONG']._serialized_end=273
+  _globals['_MINISPLUNK']._serialized_start=276
+  _globals['_MINISPLUNK']._serialized_end=660
 # @@protoc_insertion_point(module_scope)
