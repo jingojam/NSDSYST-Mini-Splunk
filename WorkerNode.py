@@ -187,9 +187,10 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
     def Purge(self, request, context):
         pass
 
-    """Service for filtering logs based on Date criterion. Returns a stream of 0-n `LogString` messages.
+    """Internal method for querying elasticsearch cluster via PIT (point in time) for search windows/paginated results
+        based on search criterion (key; e.g., "date", "hostname", etc.)
     """
-    def SearchDate(self, request, context):
+    def Query(self, request, criterion):
         #according to the docs, using pit is ideal for querying/deep pagination as logs stored grow larger
         res = self.elastic_client.open_point_in_time(
             index="*_index", # `*` acts as a wildcard so the elastic search cluster would perform scatter-gather query on all indices and aggregate it back to the worker
@@ -204,7 +205,7 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
             size=100, #100 hits 
             query={
                 "match": { #matches all logs based on (Date) criterion
-                    "date": request.argument
+                    criterion: request.argument
                 }
             },
             pit={"id": pit_id, "keep_alive": "1m"}, # update pit id and set keep alive to 1 minute 
@@ -281,33 +282,41 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
                 )
             
             search_after = hits[-1]["sort"]
+
+    """Service for filtering logs based on Date criterion. Returns a stream of 0-n `LogString` messages.
+    """
+    def SearchDate(self, request, context):
+        yield from self.Query(request, "date")
         
 
     """Service for filtering logs based on Hostname criterion. Returns a stream of 0-n `LogString` messages.
     """
     def SearchHost(self, request, context):
-        pass
+        yield from self.Query(request, "hostname")
 
     """Service for filtering logs based on Process criterion. Returns a stream of 0-n `LogString` messages.
     """
     def SearchDaemon(self, request, context):
-        pass
+        yield from self.Query(request, "daemon")
 
     """Service for filtering logs based on Severity criterion. Returns a stream of 0-n `LogString` messages.
     """
     def SearchSeverity(self, request, context):
-        pass
+        yield from self.Query(request, "severity")
 
     """Service for filtering logs based on Keyword/s criterion. Returns a stream of 0-n `LogString` messages.
     """
     def SearchKeyword(self, request, context):
-        pass
+         pass
 
     """Service for filtering logs based on Keyword/s criterion and accumulating matches. Returns `LogCount` match amount message.
     """
     def CountKeyword(self, request, context):
         pass
 
+    """Service for sending `Ping` message containing sender name to a node, Returns a `Pong` message containing sender name and received `Ping`
+        Can be used for checking node reachability between nodes in Docker splunk network
+    """
     def SendPing(self, request, context):
         return mini_splunk_protobuf_pb2.Pong(
             receiver=self.node_name,

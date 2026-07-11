@@ -52,6 +52,7 @@ class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
         def Requests(iterator):
             for request in iterator:
                 yield request
+                
         # send the requests to the worker node for ingestion
         res = self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].Ingest(Requests(request_iterator))
         # move to the next worker node
