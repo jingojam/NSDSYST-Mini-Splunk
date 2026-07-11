@@ -65,19 +65,51 @@ class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 
     """Service for filtering logs based on Date criterion. Returns a stream of 0-n `LogString` messages. """
     def SearchDate(self, request, context):
-        pass
+        self.Next()
+        try:
+            yield from self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchDate(request)
+        except grpc.RpcError as e:
+            print(e)
+            yield mini_splunk_protobuf_pb2.LogString(
+                client=request.client,
+                message=" "
+            )
 
     """Service for filtering logs based on Hostname criterion. Returns a stream of 0-n `LogString` messages. """
     def SearchHost(self, request, context):
-        pass
+        self.Next()
+        try:
+            yield from self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchHost(request)
+        except grpc.RpcError as e:
+            print(e)
+            yield mini_splunk_protobuf_pb2.LogString(
+                client=request.client,
+                message=" "
+            )
 
     """Service for filtering logs based on Process criterion. Returns a stream of 0-n `LogString` messages. """
     def SearchDaemon(self, request, context):
-        pass
+        self.Next()
+        try:
+            yield from self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchDaemon(request)
+        except grpc.RpcError as e:
+            print(e)
+            yield mini_splunk_protobuf_pb2.LogString(
+                client=request.client,
+                message=" "
+            )
 
     """Service for filtering logs based on Severity criterion. Returns a stream of 0-n `LogString` messages. """
     def SearchSeverity(self, request, context):
-        pass
+        self.Next()
+        try:
+            yield from self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchSeverity(request)
+        except grpc.RpcError as e:
+            print(e)
+            yield mini_splunk_protobuf_pb2.LogString(
+                client=request.client,
+                message=" "
+            )
 
     """Service for filtering logs based on Keyword/s criterion. Returns a stream of 0-n `LogString` messages. """
     def SearchKeyword(self, request, context):
