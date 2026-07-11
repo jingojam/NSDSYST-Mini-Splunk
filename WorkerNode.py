@@ -95,13 +95,17 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 			]
 		)
 
+	"""Internal (unexposed) method to create an index if it doesn't
+	"""
 	def CreateIndex(index_name):
+		# check if there is an index
 		if not self.elastic_client.indices.exists(index=index_name):
+			# create index
 			self.elastic_client.indices.create(
 				index=index_name
 				body={
 					"mappings": {
-						"properties": {
+						"properties": { # main fields (syslog)
 							"date": {"type", "keyword"},
 							"timestamp": {"type", "keyword"},
 							"hostname": {"type", "keyword"},
@@ -113,11 +117,18 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 				}
 			)
 
+	"""Internal method for inferring the severity of a log
+	   by mapping common words to severity levels
+	"""
 	def InferSeverity(self, message):
+		#initial severity is lowest=7 (debug)
 		severity = 7
 		
+		# for every key (word) mapped
 		for key in keys:
+			# check if the message has that keyword
 			if key in message:
+				# update severity level if it's higher (lower index)
 				if inferred_severity[key] < severity:
 					severity = inferred_severity[key] 
 		
@@ -144,11 +155,11 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 						"timestamp": match.group(2),
 						"hostname": match.group(3),
 						"daemon": match.group(4),
-						"severity": self.InferSeverity(message)
+						"severity": self.InferSeverity(message) #infer the severity (standard syslog files doesn't have severity)
 						"message": message
 					}
 
-		# ingest the logs in bulk to send N+ logs in one network message
+		# ingest the logs in bulk in one network message
 		helpers.bulk(self.elastic_client, obtain_bulk(request_iterator))
 
 		return mini_splunk_protobuf_pb2.RequestStatus(status=True)
@@ -161,50 +172,97 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
 	"""Service for filtering logs based on Date criterion. Returns a stream of 0-n `LogString` messages.
 	"""
 	def SearchDate(self, request, context):
+		#according to the docs, using pit is ideal for querying/deep pagination as logs stored grow larger
+		res = self.elastic_client.open_point_in_time(
+			index="*_index", # `*` acts as a wildcard so the elastic search cluster would perform scatter-gather query on all indices and aggregate it back to the worker
+			keep_alive="1m",
+		)
+
+		# get the point in time id for subsequent searches
+		pit_id = res["id"]
+
+		#do initial first search query to generate a search_after field for subsequent searches (initial does not need it)
 		res = self.elastic_client.search(
-			index="*_index",
-			size=100,
+			size=100, #100 hits 
 			query={
-				"match": {
+				"match": { #matches all logs based on (Date) criterion
 					"date": request.argument
 				}
 			},
+			pit={"id": pit_id, "keep_alive": "1m"}, # update pit id and set keep alive to 1 minute 
 			sort=[
 				{"date": {"order": "asc"}},
-				{"timestamp": {"order": "asc"}}
+				{"timestamp": {"order": "asc"}},
+				{"_doc": "asc"}
 			]
 		)
 
+		#get results and the pit id returned
+		hits = res["hits"]["hits"]
+		pit_id = res["pit_id"]
+
+		# if there are no results then send back an empty message to the client 
+		#  this empty message can be used as a signal that there is no result for the query
+		if not hits:
+			yield mini_splunk_protobuf_pb2.LogString(
+				client=request.client,
+				message=" "
+			)
+			return
+
+		# for every matched log result
+		for hit in hits:
+			# get the log fields
+			log_fields = hit["_source"]
+			log_string = f"{log_fields['date']} {log_fields['timestamp']} {log_fields['hostname']} {log_fields['process']}: {log_fields['message']}"
+					
+			# return it back to the client
+			yield mini_splunk_protobuf_pb2.LogString(
+				client=request.client,
+				message=log_string
+			)
+
+		# then get the search_after id from the last hit result
+		search_after = hits[-1]["sort"]
+
+		# do this all over again, search after the last hit
 		while True:
-			hits = res["hits"]["hits"]
-
-			if not hits:
-				break
-			
-			for hit in hits:
-				log_fields = hit["_source"]
-				log_string = f"{log_fields['date']} {log_fields['timestamp']} {log_fields['hostname']} {log_fields['process']}: {log_fields['message']}"
-				yield mini_splunk_protobuf_pb2.LogString(
-					client=request.client,
-					message=log_string
-				)
-
 			res = self.elastic_client.search(
-				index="*_index",
 				size=100,
 				query={
 					"match": {
 						"date": request.argument
 					}
 				},
-
-				search_after=hits[-1]["sort"],
-
+				pit={"id": pit_id, "keep_alive": "1m"},
+				search_after=search_after,
 				sort=[
 					{"date": {"order": "asc"}},
-					{"timestamp": {"order": "asc"}}
+					{"timestamp": {"order": "asc"}},
+					{"_doc": "asc"}
 				]
 			)
+
+			hits = res["hits"]["hits"]
+			pit_id = res["pit_id"]
+
+			if not hits:
+				yield mini_splunk_protobuf_pb2.LogString(
+					client=request.client,
+					message=" "
+				)
+				return
+			
+			for hit in hits:
+				log_fields = hit["_source"]
+				log_string = f"{log_fields['date']} {log_fields['timestamp']} {log_fields['hostname']} {log_fields['process']}: {log_fields['message']}"
+				
+				yield mini_splunk_protobuf_pb2.LogString(
+					client=request.client,
+					message=log_string
+				)
+			
+			search_after = hits[-1]["sort"]
 		
 
 	"""Service for filtering logs based on Hostname criterion. Returns a stream of 0-n `LogString` messages.
