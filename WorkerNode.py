@@ -96,6 +96,22 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
                 "http://elastic_node_2:9200",
             ]
         )
+        
+        print(f"[STATUS] Worker Node {self.node_name} Connecting To ElasticSearch Cluster...")
+        
+        status = False
+        
+        for i in range(50):
+            status = self.elastic_client.ping()
+            time.sleep(10)
+            
+            if status:
+                break
+            
+        if not status:
+            print(f"[STATUS] Worker Node {self.node_name} Cannot Reach Elasticsearch Cluster.")
+        else:
+            print(f"[STATUS] Worker Node {self.node_name} Connected to Elasticsearch Cluster.")
 
     """Internal (unexposed) method to create an index if it doesn't
     """
