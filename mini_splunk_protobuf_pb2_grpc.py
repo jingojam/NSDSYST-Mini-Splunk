@@ -35,10 +35,10 @@ class MiniSplunkStub:
         Args:
             channel: A grpc.Channel.
         """
-        self.Ingest = channel.stream_unary(
+        self.Ingest = channel.unary_unary(
                 '/MiniSplunk/Ingest',
-                request_serializer=mini__splunk__protobuf__pb2.LogString.SerializeToString,
-                response_deserializer=mini__splunk__protobuf__pb2.RequestStatus.FromString,
+                request_serializer=mini__splunk__protobuf__pb2.LogBatch.SerializeToString,
+                response_deserializer=mini__splunk__protobuf__pb2.IngestStatus.FromString,
                 _registered_method=True)
         self.Purge = channel.unary_unary(
                 '/MiniSplunk/Purge',
@@ -48,37 +48,32 @@ class MiniSplunkStub:
         self.SearchDate = channel.unary_stream(
                 '/MiniSplunk/SearchDate',
                 request_serializer=mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
-                response_deserializer=mini__splunk__protobuf__pb2.LogString.FromString,
+                response_deserializer=mini__splunk__protobuf__pb2.LogBatch.FromString,
                 _registered_method=True)
         self.SearchHost = channel.unary_stream(
                 '/MiniSplunk/SearchHost',
                 request_serializer=mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
-                response_deserializer=mini__splunk__protobuf__pb2.LogString.FromString,
+                response_deserializer=mini__splunk__protobuf__pb2.LogBatch.FromString,
                 _registered_method=True)
         self.SearchDaemon = channel.unary_stream(
                 '/MiniSplunk/SearchDaemon',
                 request_serializer=mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
-                response_deserializer=mini__splunk__protobuf__pb2.LogString.FromString,
+                response_deserializer=mini__splunk__protobuf__pb2.LogBatch.FromString,
                 _registered_method=True)
         self.SearchSeverity = channel.unary_stream(
                 '/MiniSplunk/SearchSeverity',
                 request_serializer=mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
-                response_deserializer=mini__splunk__protobuf__pb2.LogString.FromString,
+                response_deserializer=mini__splunk__protobuf__pb2.LogBatch.FromString,
                 _registered_method=True)
         self.SearchKeyword = channel.unary_stream(
                 '/MiniSplunk/SearchKeyword',
                 request_serializer=mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
-                response_deserializer=mini__splunk__protobuf__pb2.LogString.FromString,
+                response_deserializer=mini__splunk__protobuf__pb2.LogBatch.FromString,
                 _registered_method=True)
         self.CountKeyword = channel.unary_unary(
                 '/MiniSplunk/CountKeyword',
                 request_serializer=mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
                 response_deserializer=mini__splunk__protobuf__pb2.LogCount.FromString,
-                _registered_method=True)
-        self.SendPing = channel.unary_unary(
-                '/MiniSplunk/SendPing',
-                request_serializer=mini__splunk__protobuf__pb2.Ping.SerializeToString,
-                response_deserializer=mini__splunk__protobuf__pb2.Pong.FromString,
                 _registered_method=True)
 
 
@@ -86,7 +81,7 @@ class MiniSplunkServicer:
     """Service Interface
     """
 
-    def Ingest(self, request_iterator, context):
+    def Ingest(self, request, context):
         """Service for File Ingests. Accepts a stream (flow) of `LogString` messages.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -142,19 +137,13 @@ class MiniSplunkServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SendPing(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
 
 def add_MiniSplunkServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'Ingest': grpc.stream_unary_rpc_method_handler(
+            'Ingest': grpc.unary_unary_rpc_method_handler(
                     servicer.Ingest,
-                    request_deserializer=mini__splunk__protobuf__pb2.LogString.FromString,
-                    response_serializer=mini__splunk__protobuf__pb2.RequestStatus.SerializeToString,
+                    request_deserializer=mini__splunk__protobuf__pb2.LogBatch.FromString,
+                    response_serializer=mini__splunk__protobuf__pb2.IngestStatus.SerializeToString,
             ),
             'Purge': grpc.unary_unary_rpc_method_handler(
                     servicer.Purge,
@@ -164,37 +153,32 @@ def add_MiniSplunkServicer_to_server(servicer, server):
             'SearchDate': grpc.unary_stream_rpc_method_handler(
                     servicer.SearchDate,
                     request_deserializer=mini__splunk__protobuf__pb2.QueryRequest.FromString,
-                    response_serializer=mini__splunk__protobuf__pb2.LogString.SerializeToString,
+                    response_serializer=mini__splunk__protobuf__pb2.LogBatch.SerializeToString,
             ),
             'SearchHost': grpc.unary_stream_rpc_method_handler(
                     servicer.SearchHost,
                     request_deserializer=mini__splunk__protobuf__pb2.QueryRequest.FromString,
-                    response_serializer=mini__splunk__protobuf__pb2.LogString.SerializeToString,
+                    response_serializer=mini__splunk__protobuf__pb2.LogBatch.SerializeToString,
             ),
             'SearchDaemon': grpc.unary_stream_rpc_method_handler(
                     servicer.SearchDaemon,
                     request_deserializer=mini__splunk__protobuf__pb2.QueryRequest.FromString,
-                    response_serializer=mini__splunk__protobuf__pb2.LogString.SerializeToString,
+                    response_serializer=mini__splunk__protobuf__pb2.LogBatch.SerializeToString,
             ),
             'SearchSeverity': grpc.unary_stream_rpc_method_handler(
                     servicer.SearchSeverity,
                     request_deserializer=mini__splunk__protobuf__pb2.QueryRequest.FromString,
-                    response_serializer=mini__splunk__protobuf__pb2.LogString.SerializeToString,
+                    response_serializer=mini__splunk__protobuf__pb2.LogBatch.SerializeToString,
             ),
             'SearchKeyword': grpc.unary_stream_rpc_method_handler(
                     servicer.SearchKeyword,
                     request_deserializer=mini__splunk__protobuf__pb2.QueryRequest.FromString,
-                    response_serializer=mini__splunk__protobuf__pb2.LogString.SerializeToString,
+                    response_serializer=mini__splunk__protobuf__pb2.LogBatch.SerializeToString,
             ),
             'CountKeyword': grpc.unary_unary_rpc_method_handler(
                     servicer.CountKeyword,
                     request_deserializer=mini__splunk__protobuf__pb2.QueryRequest.FromString,
                     response_serializer=mini__splunk__protobuf__pb2.LogCount.SerializeToString,
-            ),
-            'SendPing': grpc.unary_unary_rpc_method_handler(
-                    servicer.SendPing,
-                    request_deserializer=mini__splunk__protobuf__pb2.Ping.FromString,
-                    response_serializer=mini__splunk__protobuf__pb2.Pong.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -209,7 +193,7 @@ class MiniSplunk:
     """
 
     @staticmethod
-    def Ingest(request_iterator,
+    def Ingest(request,
             target,
             options=(),
             channel_credentials=None,
@@ -219,12 +203,12 @@ class MiniSplunk:
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_unary(
-            request_iterator,
+        return grpc.experimental.unary_unary(
+            request,
             target,
             '/MiniSplunk/Ingest',
-            mini__splunk__protobuf__pb2.LogString.SerializeToString,
-            mini__splunk__protobuf__pb2.RequestStatus.FromString,
+            mini__splunk__protobuf__pb2.LogBatch.SerializeToString,
+            mini__splunk__protobuf__pb2.IngestStatus.FromString,
             options,
             channel_credentials,
             insecure,
@@ -278,7 +262,7 @@ class MiniSplunk:
             target,
             '/MiniSplunk/SearchDate',
             mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
-            mini__splunk__protobuf__pb2.LogString.FromString,
+            mini__splunk__protobuf__pb2.LogBatch.FromString,
             options,
             channel_credentials,
             insecure,
@@ -305,7 +289,7 @@ class MiniSplunk:
             target,
             '/MiniSplunk/SearchHost',
             mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
-            mini__splunk__protobuf__pb2.LogString.FromString,
+            mini__splunk__protobuf__pb2.LogBatch.FromString,
             options,
             channel_credentials,
             insecure,
@@ -332,7 +316,7 @@ class MiniSplunk:
             target,
             '/MiniSplunk/SearchDaemon',
             mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
-            mini__splunk__protobuf__pb2.LogString.FromString,
+            mini__splunk__protobuf__pb2.LogBatch.FromString,
             options,
             channel_credentials,
             insecure,
@@ -359,7 +343,7 @@ class MiniSplunk:
             target,
             '/MiniSplunk/SearchSeverity',
             mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
-            mini__splunk__protobuf__pb2.LogString.FromString,
+            mini__splunk__protobuf__pb2.LogBatch.FromString,
             options,
             channel_credentials,
             insecure,
@@ -386,7 +370,7 @@ class MiniSplunk:
             target,
             '/MiniSplunk/SearchKeyword',
             mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
-            mini__splunk__protobuf__pb2.LogString.FromString,
+            mini__splunk__protobuf__pb2.LogBatch.FromString,
             options,
             channel_credentials,
             insecure,
@@ -414,33 +398,6 @@ class MiniSplunk:
             '/MiniSplunk/CountKeyword',
             mini__splunk__protobuf__pb2.QueryRequest.SerializeToString,
             mini__splunk__protobuf__pb2.LogCount.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def SendPing(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/MiniSplunk/SendPing',
-            mini__splunk__protobuf__pb2.Ping.SerializeToString,
-            mini__splunk__protobuf__pb2.Pong.FromString,
             options,
             channel_credentials,
             insecure,

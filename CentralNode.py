@@ -1,11 +1,11 @@
-import grpc
+import grpc.aio
 import mini_splunk_protobuf_pb2
 import mini_splunk_protobuf_pb2_grpc
-from elasticsearch import Elasticsearch
+
+import hashlib
+import asyncio
 import os
-import sys
 import time
-import itertools
 from concurrent import futures
 
 # Central server node class serves as intermediary for facilitating client requests and distributing tasks to workers
@@ -17,45 +17,34 @@ class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
         self.worker_nodes = {}
         self.worker_node_addresses = worker_addresses
         self.current_worker_node = 0
+        self.retransmit_buffer = {}
         
-        for address in worker_addresses:
-            # create channels to every worker node
-            channel = grpc.insecure_channel(address)
-            self.worker_nodes[address] = {
-                "channel": channel,
-                "stub": mini_splunk_protobuf_pb2_grpc.MiniSplunkStub(channel),
-            }
-            time.sleep(20)
-            pong = self.worker_nodes[address]["stub"].SendPing(mini_splunk_protobuf_pb2.Ping(sender="CENTRAL_GATEWAY"))
-            if pong.receiver and pong.sender.sender == "CENTRAL_GATEWAY":
-                print(f"[STATUS] Worker Node Active on {address}", flush=True)
-            else:
-                print(f"[STATUS] Unable to Reach Worker Node on {address}", flush=True)
+    async def InitializeChannels(self):
+        print(f"[STATUS] Initializing Connection to Worker Nodes...", flush=True)
+        
+        try:
+            for address in self.worker_node_addresses:
                 
-        #connect via the elastic search cluster nodes
-        self.elastic_client = Elasticsearch(
-            hosts=[
-                "http://elastic_node_0:9200",
-                "http://elastic_node_1:9200",
-                "http://elastic_node_2:9200",
-            ]
-        )
+                # create channels to every worker node
+                channel = grpc.aio.insecure_channel(address)
+                self.worker_nodes[address] = {
+                    "channel": channel,
+                    "stub": mini_splunk_protobuf_pb2_grpc.MiniSplunkStub(channel),
+                }
+
+                print(f"[STATUS] Worker Node Active on {address}", flush=True)
+        except grpc.RpcError as e:
+                print(f"[STATUS] Unable to Reach Worker Node on {address}", flush=True)
+                print(e)
 
     # updates current worker node to next node
     def Next(self):
         # update the last worker node to next (cycles back to 0 --the first worker node)
         self.current_worker_node = (self.current_worker_node + 1) % self.worker_node_count
-
-    """Service for File Ingests. Accepts a stream (flow) of `LogString` messages. """
-    def Ingest(self, request_iterator, context):
-        # function to yield request messages of (`mini_splunk_protobuf_pb2.LogString()`) from an iterator
-        def Requests(iterator):
-            for request in iterator:
-                yield request
-                
-        # send the requests to the worker node for ingestion
-        res = self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].Ingest(Requests(request_iterator))
-        # move to the next worker node
+        
+    
+    async def Ingest(self, request, context):            
+        res = await self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].Ingest(request)
         self.Next()
         return res
 
@@ -64,70 +53,73 @@ class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
         pass
 
     """Service for filtering logs based on Date criterion. Returns a stream of 0-n `LogString` messages. """
-    def SearchDate(self, request, context):
+    async def SearchDate(self, request, context):
         self.Next()
         try:
-            yield from self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchDate(request)
+            async for log_batch in self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchDate(request):
+                yield log_batch
         except grpc.RpcError as e:
             print(e)
-            yield mini_splunk_protobuf_pb2.LogString(
+            yield mini_splunk_protobuf_pb2.LogBatch(
                 client=request.client,
-                message=" "
+                batch_id=-1,
+                messages=[]
             )
 
     """Service for filtering logs based on Hostname criterion. Returns a stream of 0-n `LogString` messages. """
-    def SearchHost(self, request, context):
+    async def SearchHost(self, request, context):
         self.Next()
         try:
-            yield from self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchHost(request)
+            async for log_batch in self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchHost(request):
+                yield log_batch
         except grpc.RpcError as e:
             print(e)
-            yield mini_splunk_protobuf_pb2.LogString(
+            yield mini_splunk_protobuf_pb2.LogBatch(
                 client=request.client,
-                message=" "
+                batch_id=-1,
+                messages=[]
             )
 
     """Service for filtering logs based on Process criterion. Returns a stream of 0-n `LogString` messages. """
-    def SearchDaemon(self, request, context):
+    async def SearchDaemon(self, request, context):
         self.Next()
         try:
-            yield from self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchDaemon(request)
+            async for log_batch in self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchDaemon(request):
+                yield log_batch
         except grpc.RpcError as e:
             print(e)
-            yield mini_splunk_protobuf_pb2.LogString(
+            yield mini_splunk_protobuf_pb2.LogBatch(
                 client=request.client,
-                message=" "
+                batch_id=-1,
+                messages=[]
             )
 
     """Service for filtering logs based on Severity criterion. Returns a stream of 0-n `LogString` messages. """
-    def SearchSeverity(self, request, context):
+    async def SearchSeverity(self, request, context):
         self.Next()
         try:
-            yield from self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchSeverity(request)
+            stream = self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchSeverity(request)
+            async for log_batch in stream:
+                yield log_batch
         except grpc.RpcError as e:
             print(e)
-            yield mini_splunk_protobuf_pb2.LogString(
+            yield mini_splunk_protobuf_pb2.LogBatch(
                 client=request.client,
-                message=" "
+                batch_id=-1,
+                messages=[]
             )
 
     """Service for filtering logs based on Keyword/s criterion. Returns a stream of 0-n `LogString` messages. """
-    def SearchKeyword(self, request, context):
+    async def SearchKeyword(self, request, context):
         pass
 
     """Service for filtering logs based on Keyword/s criterion and accumulating matches. Returns `LogCount` match amount message. """
-    def CountKeyword(self, request, context):
+    async def CountKeyword(self, request, context):
         pass
 
-    def SendPing(self, request, context):
-        return mini_splunk_protobuf_pb2.Pong(
-            receiver=self.node_name,
-            sender=request
-        )
-
-def main():
+async def main():
     address = "0.0.0.0:50050"
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.aio.server(futures.ThreadPoolExecutor(max_workers=10))
     # addresses of the worker nodes
     worker_addresses = [
         "worker_node_0:50051", # using the docker service name automatically resolves to the node's IP
@@ -137,18 +129,23 @@ def main():
         "worker_node_4:50051",
     ]
     node = CentralNode(worker_addresses)
+    await asyncio.sleep(30)
+    await node.InitializeChannels()
+    
     mini_splunk_protobuf_pb2_grpc.add_MiniSplunkServicer_to_server(node, server)
     server.add_insecure_port(address)
-    server.start()
+    
+    await server.start()
+    
     try:
         print(f"Central Node Started on {address}")
-        while True:
-            time.sleep(1000)
+        await server.wait_for_termination()
     except KeyboardInterrupt:
-        print()
+        print(f"[STATUS] Shutting Down Central Gateway Server...")
+        await server.stop(5)
         return
     except grpc.RpcError as e:
         return
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

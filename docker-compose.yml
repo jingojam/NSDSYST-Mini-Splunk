@@ -197,9 +197,21 @@ services:
     container_name: client_0
     command: python3 Client.py
     environment:
-      - NODE_NAME=CLIENT_0
+      - NODE_NAME=client_0
       - PYTHONUNBUFFERED=1
     networks:
       - splunk_net
     depends_on:
       - central_gateway
+
+  # client_1:
+  #   build: .
+  #   container_name: client_1
+  #   command: python3 Client.py
+  #   environment:
+  #     - NODE_NAME=client_1
+  #     - PYTHONUNBUFFERED=1
+  #   networks:
+  #     - splunk_net
+  #   depends_on:
+  #     - central_gateway

@@ -3,31 +3,33 @@ syntax = "proto3";
 // Service Interface
 service MiniSplunk{
 
-	rpc Ingest(stream LogString) returns (RequestStatus);              // Service for File Ingests. Accepts a stream (flow) of `LogString` messages.
+	rpc Ingest(LogBatch) returns (IngestStatus);              // Service for File Ingests. Accepts a stream (flow) of `LogString` messages.
 
 	rpc Purge(PurgeRequest) returns (RequestStatus);					// Service for Purging Logs. Accepts a `PurgeRequest` message to signal Server.
 
-	rpc SearchDate(QueryRequest) returns (stream LogString);			// Service for filtering logs based on Date criterion. Returns a stream of 0-n `LogString` messages.
+	rpc SearchDate(QueryRequest) returns (stream LogBatch);			// Service for filtering logs based on Date criterion. Returns a stream of 0-n `LogString` messages.
 
-	rpc SearchHost(QueryRequest) returns (stream LogString);			// Service for filtering logs based on Hostname criterion. Returns a stream of 0-n `LogString` messages.
+	rpc SearchHost(QueryRequest) returns (stream LogBatch);			// Service for filtering logs based on Hostname criterion. Returns a stream of 0-n `LogString` messages.
 
-	rpc SearchDaemon(QueryRequest) returns (stream LogString);		// Service for filtering logs based on Process criterion. Returns a stream of 0-n `LogString` messages.
+	rpc SearchDaemon(QueryRequest) returns (stream LogBatch);		// Service for filtering logs based on Process criterion. Returns a stream of 0-n `LogString` messages.
 
-	rpc SearchSeverity(QueryRequest) returns (stream LogString);		// Service for filtering logs based on Severity criterion. Returns a stream of 0-n `LogString` messages.
+	rpc SearchSeverity(QueryRequest) returns (stream LogBatch);		// Service for filtering logs based on Severity criterion. Returns a stream of 0-n `LogString` messages.
 
-	rpc SearchKeyword(QueryRequest) returns (stream LogString);		// Service for filtering logs based on Keyword/s criterion. Returns a stream of 0-n `LogString` messages.
+	rpc SearchKeyword(QueryRequest) returns (stream LogBatch);		// Service for filtering logs based on Keyword/s criterion. Returns a stream of 0-n `LogString` messages.
 
 	rpc CountKeyword(QueryRequest) returns (LogCount);			// Service for filtering logs based on Keyword/s criterion and accumulating matches. Returns `LogCount` match amount message.
-
-	rpc SendPing(Ping) returns (Pong);
 }
 
 // Request Formats
 
-// String containing a standard Syslog message 
-message LogString{
-	string client = 1; // client or log sender name
-	string message = 2;
+message IngestStatus{
+	int64 batch_id = 1;
+}
+
+message LogBatch{
+	string client = 1;
+	int64 batch_id = 2;
+	repeated string messages = 3;
 }
 
 // Query Request sent by the Client
@@ -48,14 +50,4 @@ message LogCount{
 // Status signifying Success (boolean True) or Fail (boolean False)
 message RequestStatus{
 	bool status = 1;
-}
-
-// Diagnostics
-message Ping{
-	string sender = 1;
-}
-
-message Pong{
-	string receiver = 1;
-	Ping sender = 2;
 }
