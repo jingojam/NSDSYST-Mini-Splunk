@@ -81,7 +81,7 @@ class CentralNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
             )
 
     """Service for filtering logs based on Process criterion. Returns a stream of 0-n `LogString` messages. """
-    async def SearchDaemon(self, request, context):
+    async def SearchDaemon(self, request, context): 
         self.Next()
         try:
             async for log_batch in self.worker_nodes[self.worker_node_addresses[self.current_worker_node]]["stub"].SearchDaemon(request):

@@ -26,7 +26,7 @@ message IngestStatus{
 	int64 batch_id = 1;
 }
 
-message LogBatch{
+message LogBatch{ 
 	string client = 1;
 	int64 batch_id = 2;
 	repeated string messages = 3;

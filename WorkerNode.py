@@ -191,7 +191,7 @@ class WorkerNode(mini_splunk_protobuf_pb2_grpc.MiniSplunkServicer):
     """Service for Purging Logs. Accepts a `PurgeRequest` message to signal Server.
     """
     async def Purge(self, request, context):
-        pass
+        pass 
 
     """Internal method for querying elasticsearch cluster via PIT (point in time) for search windows/paginated results
         based on search criterion (key; e.g., "date", "hostname", etc.)
